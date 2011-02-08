@@ -1,4 +1,6 @@
 require 'uri'
+require 'digest/sha1'
+
 module EMRPC  
   # Pid is a abbreviation for "process id". Pid represents so-called lightweight process (like in Erlang OTP)
   # Pids can be created, connected, disconnected, spawned, killed. 
@@ -7,6 +9,11 @@ module EMRPC
   # When pid is killed, all its connections are unbinded.
   
   module Pid
+
+    Epoch = 0x01B21DD213814000
+    TimeFormat = "%08x-%04x-%04x"
+    RandHigh = 1 << 128
+
     attr_accessor :uuid, :connections, :killed, :options
     attr_accessor :_em_server_signature, :_protocol, :_bind_address
     include DefaultCallbacks
@@ -27,31 +34,31 @@ module EMRPC
       }).new
     end
     
-    def initialize(*args, &blk)
-      @uuid = _random_uuid
+    def initialize(*args, &block)
+      @uuid = generate_uuid(*args)
       @options = {:uuid => @uuid}
       _common_init
-      super(*args, &blk) rescue nil
+      super(*args, &block) rescue nil
     end
     
-    def spawn(cls, *args, &blk)
-      pid = cls.new(*args, &blk)
+    def spawn(klass, *args, &block)
+      pid = klass.new(*args, &block)
       connect(pid)
       pid
     end
   
-    def tcp_spawn(addr, cls, *args, &blk)
-      pid = spawn(cls, *args, &blk)
+    def tcp_spawn(addr, klass, *args, &block)
+      pid = spawn(klass, *args, &block)
       pid.bind(addr)
       pid
     end
     
-    def thread_spawn(cls, *args, &blk)
+    def thread_spawn(klass, *args, &block)
       # TODO: think about thread-safe passing messages back to sender.
     end
     
     def bind(addr)
-      raise "Pid is already binded!" if @_em_server_signature
+      raise "Pid is already bound!" if @_em_server_signature
       @_bind_address = addr.parsed_uri
       this = self
       @_em_server_signature = make_server_connection(@_bind_address, _protocol)  do |conn|
@@ -182,17 +189,31 @@ module EMRPC
       args._initialize_pids_recursively_d4d309bd!(self)
       send(*args)
     end
-    
+
+    # The UUIDs need not be RFC uuids. For the purposes of a Pid, the UUID
+    # will be generated based off a combination of the current time, a hash
+    # of the initialization arguments, and a random element.
+    def generate_uuid(*args)
+      now = Time.now
+      time = (now.to_i * 10_000_000) + (now.tv_usec * 10) + Epoch
+
+      t1 = time & 0xFFFF_FFFF
+      t2 = time >> 32
+      t2 = t2 & 0xFFFF
+      t3 = time >> 48
+      t3 = t3 & 0b0000_1111_1111_1111
+      t3 = t3 | 0b0001_0000_0000_0000
+
+      time_string = TimeFormat % [t1,t2,t3]
+      arg_string = Digest::SHA1.hexdigest(args.collect {|arg| arg.to_s}.sort.to_s)
+      "#{time_string}-#{arg_string}-#{rand(RandHigh).to_s(16)}"
+    end
+
   private
 
     def _common_init
       @connections = {} # pid.uuid -> connection
     end
-    
-    def _random_uuid
-      # FIXME: insert real uuid generating here!
-      rand(2**128).to_s(16)
-    end
-    
+
   end # Pid
 end # EMRPC

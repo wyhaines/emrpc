@@ -25,10 +25,10 @@ module EMRPC
       send_marshalled_message([:handshake, arg])
     end
     
-    def receive_handshake_message(msg)
-      prefix, options = msg
+    def receive_handshake_message(message)
+      prefix, options = message
       lpid = @local_pid
-      prefix == :handshake or return lpid.handshake_failed(self, msg)
+      prefix == :handshake or return lpid.handshake_failed(self, message)
       rpid = RemotePid.new(self, options)
       # restore receive_marshalled_message
       class <<self
@@ -47,9 +47,9 @@ module EMRPC
       send_marshalled_message(args.encode_b381b571_1ab2_5889_8221_855dbbc76242(@local_pid))
     end
     
-    def receive_regular_message(msg)
+    def receive_regular_message(message)
       lpid = @local_pid
-      lpid.__send__(*(msg.decode_b381b571_1ab2_5889_8221_855dbbc76242(lpid)))
+      lpid.__send__(*(message.decode_b381b571_1ab2_5889_8221_855dbbc76242(lpid)))
     end
     
     def rescue_marshal_error(e)
