@@ -8,11 +8,11 @@ module EMRPC
     def self.new(marshal_const)
       mod = Module.new
       mod.module_eval <<-EOF, __FILE__, __LINE__
-        def send_marshalled_message(msg)
-          send_message(MarshalBackend.dump(msg))
+        def send_marshalled_message(message)
+          send_message(MarshalBackend.dump(message))
         end
-        def receive_message(msg)
-          receive_marshalled_message(MarshalBackend.load(msg))
+        def receive_message(message)
+          receive_marshalled_message(MarshalBackend.load(message))
         rescue Exception => e
           rescue_marshal_error(e)
         end
