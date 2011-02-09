@@ -1,5 +1,6 @@
 require 'uri'
 require 'digest/sha1'
+require 'socket'
 
 module EMRPC  
   # Pid is a abbreviation for "process id". Pid represents so-called lightweight process (like in Erlang OTP)
@@ -85,7 +86,11 @@ module EMRPC
       c.disconnected_callback = disconnected_callback
       c
     end
-    
+
+    def socket_information
+      Socket.unpack_sockaddr_in(EventMachine.get_sockname(@_em_server_signature))
+    end
+
     def disconnect(pid, disconnected_callback = nil)
       c = @connections[pid.uuid]
       c.disconnected_callback = disconnected_callback if disconnected_callback
@@ -195,8 +200,10 @@ module EMRPC
     # of the initialization arguments, and a random element.
     def generate_uuid(*args)
       now = Time.now
+      # Turn the time into a very large integer.
       time = (now.to_i * 10_000_000) + (now.tv_usec * 10) + Epoch
 
+      # Now break that integer into three chunks.
       t1 = time & 0xFFFF_FFFF
       t2 = time >> 32
       t2 = t2 & 0xFFFF
