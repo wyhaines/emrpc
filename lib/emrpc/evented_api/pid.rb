@@ -34,7 +34,7 @@ module EMRPC
         attr_accessor(*attributes)
       }).new
     end
-    
+
     def initialize(*args, &block)
       @uuid = generate_uuid(*args)
       @options = {:uuid => @uuid}
@@ -114,13 +114,13 @@ module EMRPC
     # in favor of local connection.
     def connection_established(pid, conn)
       @connections[pid.uuid] ||= conn
-      __send__(conn.connected_callback, pid)
+      Symbol === conn.connected_callback ? __send__(conn.connected_callback, pid) : conn.connected_callback.call(pid)
       @connections[pid.uuid].remote_pid || pid # looks like hack, but it is not.
     end
 
     def connection_unbind(pid, conn)
       @connections.delete(pid.uuid)
-      __send__(conn.disconnected_callback, pid)
+      Symboll === conn.disconnected_callback ? __send__(conn.disconnected_callback, pid) : conn.disconnected_callback.call(pid)
     end
     
     #
