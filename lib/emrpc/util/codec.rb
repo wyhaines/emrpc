@@ -55,12 +55,12 @@ module EMRPC
     # OPTIMIZE: make in-place encoding using Enumerable#each_with_index{|e,i| }
     class ::Array
       def encode_b381b571_1ab2_5889_8221_855dbbc76242(ref)
-        inject([]) do |a, e|
+        inject(self.class.new) do |a, e|
           a.push(e.encode_b381b571_1ab2_5889_8221_855dbbc76242(ref))
         end
       end
       def decode_b381b571_1ab2_5889_8221_855dbbc76242(ref)
-        inject([]) do |a, e|
+        inject(self.class.new) do |a, e|
           a.push(e.decode_b381b571_1ab2_5889_8221_855dbbc76242(ref))
         end
       end
