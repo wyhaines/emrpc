@@ -72,7 +72,7 @@ module EMRPC
     # 2. When connection is established, asks for uuid.
     # 3. When uuid is received, triggers callback on the client.
     # (See Protocol for details)
-    def connect(addr, connected_callback = nil, disconnected_callback = nil)
+    def connect(addr, connected_callback = nil, disconnected_callback = nil, &block)
       c = if addr.is_a?(Pid) && pid = addr
         LocalConnection.new(self, pid)
       else
@@ -82,6 +82,7 @@ module EMRPC
           conn.address = addr
         end
       end
+      connected_callback ||= block
       c.connected_callback    = connected_callback
       c.disconnected_callback = disconnected_callback
       c
@@ -120,7 +121,7 @@ module EMRPC
 
     def connection_unbind(pid, conn)
       @connections.delete(pid.uuid)
-      Symboll === conn.disconnected_callback ? __send__(conn.disconnected_callback, pid) : conn.disconnected_callback.call(pid)
+      Symbol === conn.disconnected_callback ? __send__(conn.disconnected_callback, pid) : conn.disconnected_callback.call(pid)
     end
     
     #

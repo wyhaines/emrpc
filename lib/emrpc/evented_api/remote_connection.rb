@@ -68,6 +68,16 @@ module EMRPC
         @local_pid.connection_failed(self)
       end
     end
-    
+
+    # Setup a proc or a block to be called when this connection connects.
+    def on_connect(callback = nil, &block)
+      @connected_callback = callback || block
+    end
+
+    # Setup a proc or a block to be called when this connection disconnects
+    def on_disconnect(callback = nil, &block)
+      @disconnected_callback = callback || block
+    end
+
   end # RemoteConnection
 end # EMRPC
